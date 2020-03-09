@@ -9,6 +9,8 @@ module.exports = function s3(config) {
         throw new TypeError('s3: The `getData` option must be a function')
     }
 
+    logger.info(`i am here ${config.getData}`, 'companion.client.s3')
+
     /**
      * Get upload paramaters for a simple direct upload.
      *
