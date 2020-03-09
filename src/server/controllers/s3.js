@@ -1,5 +1,5 @@
 const router = require('express').Router
-const logger = require('../server/logger')
+const logger = require('../logger')
 
 module.exports = function s3(config) {
     if (typeof config.acl !== 'string') {
