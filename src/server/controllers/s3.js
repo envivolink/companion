@@ -1,4 +1,5 @@
 const router = require('express').Router
+const logger = require('../server/logger')
 
 module.exports = function s3(config) {
     if (typeof config.acl !== 'string') {
@@ -42,6 +43,8 @@ module.exports = function s3(config) {
         Object.keys(metadata).forEach((key) => {
             fields[`x-amz-meta-${key}`] = metadata[key]
         })
+
+        logger.info(`bucket ${data.bucket}`, 'companion.client.s3')
 
         client.createPresignedPost({
             Bucket: data.bucket,
