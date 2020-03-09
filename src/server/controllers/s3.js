@@ -184,6 +184,8 @@ module.exports = function s3(config) {
             return res.status(400).json({ error: 's3: the part number must be a number between 1 and 10000.' })
         }
 
+        console.log('uploading part', partNumber)
+
         client.getSignedUrl('uploadPart', {
             Bucket: typeof config.bucket !== 'function' ? config.bucket : config.bucket(req, req.query.filename, req.body.metadata || {}),
             Key: key,
