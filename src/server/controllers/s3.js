@@ -28,14 +28,14 @@ module.exports = function s3(config) {
         // @ts-ignore The `companion` property is added by middleware before reaching here.
         const client = req.companion.s3Client
         const metadata = req.query.metadata || {}
-        const data = config.getData(req, req.query.filename, metadata)
-        if (typeof data.key !== 'string') {
+        const dataKey = config.getData(req, req.query.filename, metadata)
+        if (typeof dataKey.key !== 'string') {
             return res.status(500).json({ error: 's3: filename returned from `getData` must be a string' })
         }
 
         const fields = {
             acl: config.acl,
-            key: data.key,
+            key: dataKey.key,
             success_action_status: '201',
             'content-type': req.query.type
         }
@@ -47,7 +47,7 @@ module.exports = function s3(config) {
         logger.info(`bucket ${data.bucket}`, 'companion.client.s3')
 
         client.createPresignedPost({
-            Bucket: data.bucket,
+            Bucket: dataKey.bucket,
             Expires: config.expires,
             Fields: fields,
             Conditions: config.conditions
@@ -84,18 +84,21 @@ module.exports = function s3(config) {
 
         const { type, metadata } = req.body
 
-        const data = config.getData(req, req.query.filename, metadata)
+        const dataKey = config.getData(req, req.query.filename, metadata)
 
-        if (typeof data.key !== 'string') {
+        if (typeof dataKey.key !== 'string') {
             return res.status(500).json({ error: 's3: filename returned from `getKey` must be a string' })
         }
         if (typeof type !== 'string') {
             return res.status(400).json({ error: 's3: content type must be a string' })
         }
 
+        logger.info(`bucket ${dataKey.bucket}`, 'companion.client.s3')
+        logger.info(`key ${dataKey.key}`, 'companion.client.s3')
+
         client.createMultipartUpload({
-            Bucket: data.bucket,
-            Key: data.key,
+            Bucket: dataKey.bucket,
+            Key: dataKey.key,
             ACL: config.acl,
             ContentType: type,
             Metadata: metadata,
@@ -131,7 +134,7 @@ module.exports = function s3(config) {
         const { uploadId } = req.params
         const { key } = req.query
 
-        const data = config.getData(req, req.query.filename, req.body.metadata)
+        const dataKey = config.getData(req, req.query.filename, req.body.metadata)
 
         if (typeof key !== 'string') {
             return res.status(400).json({ error: 's3: the object key must be passed as a query parameter. For example: "?key=abc.jpg"' })
@@ -142,7 +145,7 @@ module.exports = function s3(config) {
 
         function listPartsPage(startAt) {
             client.listParts({
-                Bucket: data.bucket,
+                Bucket: dataKey.bucket,
                 Key: key,
                 UploadId: uploadId,
                 PartNumberMarker: startAt
@@ -185,7 +188,7 @@ module.exports = function s3(config) {
         const { uploadId, partNumber } = req.params
         const { key } = req.query
 
-        const data = config.getData(req, req.query.filename, req.body.metadata)
+        const dataKey = config.getData(req, req.query.filename, req.body.metadata)
 
         if (typeof key !== 'string') {
             return res.status(400).json({ error: 's3: the object key must be passed as a query parameter. For example: "?key=abc.jpg"' })
@@ -197,7 +200,7 @@ module.exports = function s3(config) {
         console.log('uploading part', partNumber)
 
         client.getSignedUrl('uploadPart', {
-            Bucket: data.bucket,
+            Bucket: dataKey.bucket,
             Key: key,
             UploadId: uploadId,
             PartNumber: partNumber,
@@ -228,14 +231,14 @@ module.exports = function s3(config) {
         const { uploadId } = req.params
         const { key } = req.query
 
-        const data = config.getData(req, req.query.filename, req.body.metadata)
+        const dataKey = config.getData(req, req.query.filename, req.body.metadata)
 
         if (typeof key !== 'string') {
             return res.status(400).json({ error: 's3: the object key must be passed as a query parameter. For example: "?key=abc.jpg"' })
         }
 
         client.abortMultipartUpload({
-            Bucket: data.bucket,
+            Bucket: dataKey.bucket,
             Key: key,
             UploadId: uploadId
         }, (err, data) => {
@@ -266,7 +269,7 @@ module.exports = function s3(config) {
         const { key } = req.query
         const { parts } = req.body
 
-        const data = config.getData(req, req.query.filename, req.body.metadata)
+        const dataKey = config.getData(req, req.query.filename, req.body.metadata)
 
         if (typeof key !== 'string') {
             return res.status(400).json({ error: 's3: the object key must be passed as a query parameter. For example: "?key=abc.jpg"' })
@@ -276,7 +279,7 @@ module.exports = function s3(config) {
         }
 
         client.completeMultipartUpload({
-            Bucket: data.bucket,
+            Bucket: dataKey.bucket,
             Key: key,
             UploadId: uploadId,
             MultipartUpload: {
